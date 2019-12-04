@@ -1,0 +1,15 @@
+<RCC>
+    <qresource prefix="/shaders">
+        <file>default.frag</file>
+        <file>default.vert</file>
+        <file>toon.vert</file>
+        <file>toon.frag</file>
+        <file>water.vert</file>
+        <file>water.frag</file>
+    </qresource>
+    <qresource prefix="/skybox"/>
+    <qresource prefix="/">
+        <file>models/giraffe.obj</file>
+        <file>models/Giraffe_txtr.png</file>
+    </qresource>
+</RCC>
