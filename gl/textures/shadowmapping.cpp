@@ -1,5 +1,6 @@
 #include "shadowmapping.h"
-#include <glew-1.10.0\include\GL\glew.h>
+//#include <glew-1.10.0\include\GL\glew.h>
+#include "GL/glew.h"
 
 ShadowMapping::ShadowMapping() : m_fbo(0), m_texture(0)
 {
