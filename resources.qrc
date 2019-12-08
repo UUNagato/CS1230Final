@@ -6,6 +6,10 @@
         <file>toon.frag</file>
         <file>water.vert</file>
         <file>water.frag</file>
+        <file>outline.vert</file>
+        <file>outline.frag</file>
+        <file>shadowmap.vert</file>
+        <file>shadowmap.frag</file>
     </qresource>
     <qresource prefix="/skybox"/>
     <qresource prefix="/">

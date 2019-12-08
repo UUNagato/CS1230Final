@@ -42,7 +42,8 @@ SOURCES += \
     gl/objloader.cpp \
     shapes/objmodel.cpp \
     gl/textures/Texture.cpp \
-    gl/textures/Texture2D.cpp
+    gl/textures/Texture2D.cpp \
+    gl/textures/shadowmapping.cpp
 
 HEADERS += \
     ui/mainwindow.h \
@@ -70,7 +71,8 @@ HEADERS += \
     gl/objloader.h \
     shapes/objmodel.h \
     gl/textures/Texture.h \
-    gl/textures/Texture2D.h
+    gl/textures/Texture2D.h \
+    gl/textures/shadowmapping.h
 
 FORMS += ui/mainwindow.ui
 INCLUDEPATH += glm ui glew-1.10.0/include

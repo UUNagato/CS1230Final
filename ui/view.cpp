@@ -68,6 +68,13 @@ void View::initializeGL() {
     glm::mat4 view = glm::lookAt(glm::vec3(0.5f, 3.f, 0.f), glm::vec3(0.f, 0.f, -1.f),
                                  glm::vec3(0.f, 1.f, 0.f));
     glm::mat4 projection = glm::perspective(glm::radians(45.f), 1024.f / 768.f, 0.1f, 10.f);
+
+    glm::mat4 lightView = glm::lookAt(glm::vec3(1.5f, 2.f, -1.5f), glm::vec3(0.f, 0.f, -1.f),
+                                      glm::vec3(0.f, 1.f, 0.f));
+    glm::mat4 lightProj = glm::ortho(-3.f, 3.f, -3.f, 3.f, 0.1f, 5.f);
+    glm::mat4 lightSpaceMat = lightProj * lightView;
+
+
     m_toon_shader = std::make_unique<Shader>(":/shaders/toon.vert", ":/shaders/toon.frag");
     m_toon_shader->bind();
     m_toon_shader->setUniform("view", view);
@@ -82,7 +89,20 @@ void View::initializeGL() {
     m_water_shader->bind();
     m_water_shader->setUniform("view", view);
     m_water_shader->setUniform("projection", projection);
+    m_water_shader->setUniform("lightSpaceMatrix", lightSpaceMat);
+    m_water_shader->setUniform("shadowMap", 2);
     m_water_shader->unbind();
+
+    m_outline_shader = std::make_unique<Shader>(":/shaders/outline.vert", ":/shaders/outline.frag");
+    m_outline_shader->bind();
+    m_outline_shader->setUniform("view", view);
+    m_outline_shader->setUniform("projection", projection);
+    m_outline_shader->unbind();
+
+    m_shadowmap_shader = std::make_unique<Shader>(":/shaders/shadowmap.vert", ":/shaders/shadowmap.frag");
+    m_shadowmap_shader->bind();
+    m_shadowmap_shader->setUniform("lightSpaceMatrix", lightSpaceMat);
+    m_shadowmap_shader->unbind();
 
 
     //std::vector<GLfloat> sphereData = SPHERE_VERTEX_POSITIONS;
@@ -97,6 +117,7 @@ void View::initializeGL() {
     m_quad = std::make_unique<Quad>();
     m_character = std::make_unique<ObjModel>();
     m_toon_diffuse = std::make_shared<Texture2D>();
+    m_shadow_map = std::make_shared<ShadowMapping>();
 
     std::cout << m_character->load(":/models/giraffe.obj") << std::endl;
     std::cout << "Read character texture map:" << m_toon_diffuse->open(":/models/Giraffe_txtr.png") << std::endl;
@@ -105,15 +126,32 @@ void View::initializeGL() {
 void View::paintGL() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    // draw character, make it lay down
+    glm::mat4 chara_model(1.f);
+    chara_model = glm::scale(chara_model, glm::vec3(0.5f));
+    chara_model = glm::rotate(chara_model, glm::radians(-90.f), glm::vec3(1.f, 0.f, 0.f));
+
+    glm::mat4 water_model(1.f);
+    water_model = glm::translate(water_model, glm::vec3(0.f, -0.5f, 0.f));
+    water_model = glm::scale(water_model, glm::vec3(3.f));
+    water_model = glm::rotate(water_model, glm::radians(-90.f), glm::vec3(1.f, 0.f, 0.f));
+
+    // first pass shadowmapping
+    glViewport(0, 0, ShadowMapping::SHADOW_MAPPING_WIDTH, ShadowMapping::SHADOW_MAPPING_HEIGHT);
+    m_shadowmap_shader->bind();
+    m_shadow_map->setup();
+    glClear(GL_DEPTH_BUFFER_BIT);
+    m_shadowmap_shader->setUniform("model", chara_model);
+    m_character->draw();
+    m_shadow_map->finish();
+    m_shadowmap_shader->unbind();
+
     // TODO: Implement the demo rendering here
+    glViewport(0, 0, m_viewportWidth, m_viewportHeight);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     m_toon_shader->bind();
 
-    // draw character, make it lay down
-    glm::mat4 model(1.f);
-    model = glm::scale(model, glm::vec3(0.5f));
-    model = glm::rotate(model, glm::radians(-90.f), glm::vec3(1.f, 0.f, 0.f));
-
-    m_toon_shader->setUniform("model", model);
+    m_toon_shader->setUniform("model", chara_model);
     glActiveTexture(GL_TEXTURE0);
     m_toon_diffuse->bind();
 
@@ -121,16 +159,21 @@ void View::paintGL() {
     m_toon_diffuse->unbind();
     m_toon_shader->unbind();
 
+    m_outline_shader->bind();
+    m_outline_shader->setUniform("model", chara_model);
+    glCullFace(GL_FRONT);
+    m_character->draw();
+    glCullFace(GL_BACK);
+    m_outline_shader->unbind();
+
     // Water part ========================================
 
     m_water_shader->bind();
-    model = glm::mat4(1.f);
-    model = glm::scale(model, glm::vec3(3.f));
-    model = glm::rotate(model, glm::radians(-90.f), glm::vec3(1.f, 0.f, 0.f));
-    model = glm::translate(model, glm::vec3(0.f, 0.5f, 0.f));
-
-    m_water_shader->setUniform("model", model);
+    m_water_shader->setUniform("model", water_model);
+    glActiveTexture(GL_TEXTURE2);
+    m_shadow_map->bindShadowMapping();
     m_quad->draw();
+    m_shadow_map->unbindShadowMapping();
     m_water_shader->unbind();
 }
 
@@ -139,6 +182,9 @@ void View::resizeGL(int w, int h) {
     w = static_cast<int>(w / ratio);
     h = static_cast<int>(h / ratio);
     glViewport(0, 0, w, h);
+
+    m_viewportWidth = w;
+    m_viewportHeight = h;
 }
 
 void View::mousePressEvent(QMouseEvent *event) {
