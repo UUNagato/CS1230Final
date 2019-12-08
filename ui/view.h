@@ -53,6 +53,8 @@ private:
 
     std::shared_ptr<Texture2D> m_toon_diffuse;
     std::shared_ptr<ShadowMapping> m_shadow_map;
+    std::shared_ptr<Texture2D> m_surface_noise;
+    std::shared_ptr<Texture2D> m_surface_distortion;
 
 private slots:
     void tick();

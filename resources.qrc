@@ -15,5 +15,7 @@
     <qresource prefix="/">
         <file>models/giraffe.obj</file>
         <file>models/Giraffe_txtr.png</file>
+        <file>models/PerlinNoise.png</file>
+        <file>models/WaterDistortion.png</file>
     </qresource>
 </RCC>
