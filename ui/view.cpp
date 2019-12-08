@@ -141,9 +141,10 @@ void View::paintGL() {
     glm::mat4 chara_model(1.f);
     chara_model = glm::scale(chara_model, glm::vec3(0.5f));
     chara_model = glm::rotate(chara_model, glm::radians(-90.f), glm::vec3(1.f, 0.f, 0.f));
+    chara_model = glm::translate(chara_model, glm::vec3(0.f, 0.f, m_chara_position));
 
     glm::mat4 water_model(1.f), water_scale_model(1.f);
-    water_model = glm::translate(water_model, glm::vec3(0.f, 0.5f, -1.f));
+    water_model = glm::translate(water_model, glm::vec3(0.f, 0.1f, -1.f));
     water_model = glm::scale(water_model, glm::vec3(5.f));
     water_scale_model = glm::scale(water_scale_model, glm::vec3(4.f, 1.5f, 1.f));
 
@@ -253,7 +254,10 @@ void View::tick() {
     // Get the number of seconds since the last tick (variable update rate)
 //    float seconds = m_time.restart() * 0.001f;
 
+    float time = m_time.elapsed()/500.f;
+
     // TODO: Implement the demo update here
+    m_chara_position = -0.1f + sin(time)/10.f;
 
     // Flag this view for repainting (Qt will call paintGL() soon after)
     update();

@@ -56,6 +56,8 @@ private:
     std::shared_ptr<Texture2D> m_surface_noise;
     std::shared_ptr<Texture2D> m_surface_distortion;
 
+    float m_chara_position;
+
 private slots:
     void tick();
 
