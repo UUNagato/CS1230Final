@@ -7,6 +7,7 @@
 #include <QDir>
 //#include <QMouseEvent>
 //#include <sstream>
+#include <QElapsedTimer>
 
 #include "shapes/sphere.h"
 //#include "shapes/cube.h"
@@ -82,6 +83,8 @@ void View::initializeGL() {
     m_water_shader->bind();
     m_water_shader->setUniform("view", view);
     m_water_shader->setUniform("projection", projection);
+    m_water_shader->setUniform("cameraDepthTexture", 0);
+    m_water_shader->setUniform("cameraNormalsTexture", 0);
     m_water_shader->unbind();
 
 
@@ -123,13 +126,15 @@ void View::paintGL() {
 
     // Water part ========================================
 
+
     m_water_shader->bind();
     model = glm::mat4(1.f);
-    model = glm::scale(model, glm::vec3(3.f));
-    model = glm::rotate(model, glm::radians(-90.f), glm::vec3(1.f, 0.f, 0.f));
-    model = glm::translate(model, glm::vec3(0.f, 0.5f, 0.f));
+    model = glm::scale(model, glm::vec3(2.f));
+//    model = glm::rotate(model, glm::radians(-90.f), glm::vec3(1.f, 0.f, 0.f));
+//    model = glm::translate(model, glm::vec3(0.f, 0.05f, -0.5f));
 
     m_water_shader->setUniform("model", model);
+    m_water_shader->setUniform("time", static_cast<float>(m_time.elapsed()));
     m_quad->draw();
     m_water_shader->unbind();
 }
@@ -179,7 +184,7 @@ void View::keyReleaseEvent(QKeyEvent *event) {
 
 void View::tick() {
     // Get the number of seconds since the last tick (variable update rate)
-    float seconds = m_time.restart() * 0.001f;
+//    float seconds = m_time.restart() * 0.001f;
 
     // TODO: Implement the demo update here
 
