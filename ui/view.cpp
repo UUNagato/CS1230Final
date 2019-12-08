@@ -93,8 +93,9 @@ void View::initializeGL() {
 
     m_water_shader->setUniform("lightSpaceMatrix", lightSpaceMat);
     m_water_shader->setUniform("shadowMap", 2);
-    m_water_shader->setUniform("cameraDepthTexture", 0);
-    m_water_shader->setUniform("cameraNormalsTexture", 1);
+    m_water_shader->setUniform("surfaceNoise", 0);
+    m_water_shader->setUniform("surfaceDistortion", 1);
+    m_water_shader->setUniform("cameraDepthTexture", 3);
     m_water_shader->unbind();
 
     m_outline_shader = std::make_unique<Shader>(":/shaders/outline.vert", ":/shaders/outline.frag");
@@ -123,8 +124,14 @@ void View::initializeGL() {
     m_toon_diffuse = std::make_shared<Texture2D>();
     m_shadow_map = std::make_shared<ShadowMapping>();
 
+    m_surface_noise = std::make_shared<Texture2D>();
+    m_surface_distortion = std::make_shared<Texture2D>();
+
     std::cout << m_character->load(":/models/giraffe.obj") << std::endl;
     std::cout << "Read character texture map:" << m_toon_diffuse->open(":/models/Giraffe_txtr.png") << std::endl;
+
+    m_surface_noise->open(":/models/PerlinNoise.png");
+    m_surface_distortion->open(":/models/WaterDistortion.png");
 }
 
 void View::paintGL() {
@@ -135,9 +142,10 @@ void View::paintGL() {
     chara_model = glm::scale(chara_model, glm::vec3(0.5f));
     chara_model = glm::rotate(chara_model, glm::radians(-90.f), glm::vec3(1.f, 0.f, 0.f));
 
-    glm::mat4 water_model(1.f);
-    water_model = glm::translate(water_model, glm::vec3(0.f, -0.5f, -1.f));
+    glm::mat4 water_model(1.f), water_scale_model(1.f);
+    water_model = glm::translate(water_model, glm::vec3(0.f, 0.5f, -1.f));
     water_model = glm::scale(water_model, glm::vec3(5.f));
+    water_scale_model = glm::scale(water_scale_model, glm::vec3(4.f, 1.5f, 1.f));
 
     // first pass shadowmapping
     glViewport(0, 0, ShadowMapping::SHADOW_MAPPING_WIDTH, ShadowMapping::SHADOW_MAPPING_HEIGHT);
@@ -171,12 +179,26 @@ void View::paintGL() {
 
     // Water part ========================================
     m_water_shader->bind();
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     m_water_shader->setUniform("model", water_model);
+    m_water_shader->setUniform("scaleMatrix", water_scale_model);
+
+    glActiveTexture(GL_TEXTURE0);
+    m_surface_noise->bind();
+
+
+    glActiveTexture(GL_TEXTURE1);
+    m_surface_distortion->bind();
+
     glActiveTexture(GL_TEXTURE2);
     m_shadow_map->bindShadowMapping();
     m_water_shader->setUniform("time", static_cast<float>(m_time.elapsed()));
     m_quad->draw();
     m_shadow_map->unbindShadowMapping();
+    m_surface_noise->unbind();
+    m_surface_distortion->unbind();
+    glDisable(GL_BLEND);
     m_water_shader->unbind();
 }
 

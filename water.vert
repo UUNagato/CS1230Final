@@ -8,6 +8,7 @@ uniform mat4 view;
 uniform mat4 projection;
 
 uniform mat4 lightSpaceMatrix;
+uniform mat4 scaleMatrix;
 
 out vec3 world_pos;
 out vec3 world_normal;
@@ -21,5 +22,5 @@ void main(void)
     world_normal = vec3(model * vec4(normal, 1.0));
     gl_Position = projection * view * worldP;
     fragPosLightSpace = lightSpaceMatrix * worldP;
-    uv = iuv;
+    uv = mat2(scaleMatrix) * iuv;
 }
