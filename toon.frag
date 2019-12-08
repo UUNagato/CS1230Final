@@ -59,6 +59,7 @@ void main(void)
 
     float specMask = (pow(dot(H, world_normal), material_shininess) > 0.4) ? 1: 0;
     float edgeDetection = (dot(V, world_normal) > 0.15) ? 1 : 0;
+    edgeDetection = 1;
 
     color = ambientColor + edgeDetection * (color + diffuseColor + specular * specMask);
 
