@@ -7,6 +7,7 @@
 #include <QDir>
 //#include <QMouseEvent>
 //#include <sstream>
+#include <QElapsedTimer>
 
 #include "shapes/sphere.h"
 //#include "shapes/cube.h"
@@ -89,8 +90,11 @@ void View::initializeGL() {
     m_water_shader->bind();
     m_water_shader->setUniform("view", view);
     m_water_shader->setUniform("projection", projection);
+
     m_water_shader->setUniform("lightSpaceMatrix", lightSpaceMat);
     m_water_shader->setUniform("shadowMap", 2);
+    m_water_shader->setUniform("cameraDepthTexture", 0);
+    m_water_shader->setUniform("cameraNormalsTexture", 1);
     m_water_shader->unbind();
 
     m_outline_shader = std::make_unique<Shader>(":/shaders/outline.vert", ":/shaders/outline.frag");
@@ -132,9 +136,8 @@ void View::paintGL() {
     chara_model = glm::rotate(chara_model, glm::radians(-90.f), glm::vec3(1.f, 0.f, 0.f));
 
     glm::mat4 water_model(1.f);
-    water_model = glm::translate(water_model, glm::vec3(0.f, -0.5f, 0.f));
-    water_model = glm::scale(water_model, glm::vec3(3.f));
-    water_model = glm::rotate(water_model, glm::radians(-90.f), glm::vec3(1.f, 0.f, 0.f));
+    water_model = glm::translate(water_model, glm::vec3(0.f, -0.5f, -1.f));
+    water_model = glm::scale(water_model, glm::vec3(5.f));
 
     // first pass shadowmapping
     glViewport(0, 0, ShadowMapping::SHADOW_MAPPING_WIDTH, ShadowMapping::SHADOW_MAPPING_HEIGHT);
@@ -167,11 +170,11 @@ void View::paintGL() {
     m_outline_shader->unbind();
 
     // Water part ========================================
-
     m_water_shader->bind();
     m_water_shader->setUniform("model", water_model);
     glActiveTexture(GL_TEXTURE2);
     m_shadow_map->bindShadowMapping();
+    m_water_shader->setUniform("time", static_cast<float>(m_time.elapsed()));
     m_quad->draw();
     m_shadow_map->unbindShadowMapping();
     m_water_shader->unbind();
@@ -225,7 +228,7 @@ void View::keyReleaseEvent(QKeyEvent *event) {
 
 void View::tick() {
     // Get the number of seconds since the last tick (variable update rate)
-    float seconds = m_time.restart() * 0.001f;
+//    float seconds = m_time.restart() * 0.001f;
 
     // TODO: Implement the demo update here
 

@@ -70,6 +70,6 @@ void main(void)
     ///////// end EXP
 
 
-    fragColor= vec4(pow(color, vec3(1.0 / 2.2)), 1);
+    fragColor= vec4(color, 1);
 
 }
