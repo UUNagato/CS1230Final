@@ -2,15 +2,16 @@
 in vec3 world_pos;
 in vec3 world_normal;
 in vec2 uv;
+in vec4 fragPosLightSpace;
 
-out vec4 fragColor;
-
+uniform sampler2D shadowMap;
 uniform sampler2D cameraDepthTexture;
 uniform sampler2D cameraNormalsTexture;
 uniform float time;
 
-int OCTAVES = 1;
-float SWITCH_TIME = 60.f;
+const int OCTAVES = 1;
+const float SWITCH_TIME = 60.f;
+out vec4 fragColor;
 
 float rand(vec2 c){
         return fract(sin(dot(c.xy ,vec2(12.9898,78.233))) * 43758.5453);
@@ -50,6 +51,15 @@ float pNoise(vec2 p, int res){
         return nf*nf*nf*nf;
 }
 
+float shadowCalculation(vec4 lightSpacePos)
+{
+    vec3 projCoords = lightSpacePos.xyz / lightSpacePos.w;
+    projCoords = projCoords * 0.5 + 0.5;
+    float closestDepth = texture(shadowMap, projCoords.xy).r;
+    float currentDepth = projCoords.z;
+    float shadow = currentDepth > closestDepth ? 1.0 : 0.0;
+    return shadow;
+}
 
 float slopeLines2D(in float x, in float y, in float sx, in float sy, in float steepness)
 {
