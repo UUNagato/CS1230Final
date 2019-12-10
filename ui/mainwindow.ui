@@ -51,13 +51,92 @@
    <widget class="QWidget" name="dockWidgetContents">
     <layout class="QVBoxLayout" name="verticalLayout">
      <item>
-      <widget class="QSlider" name="horizontalSlider">
-       <property name="maximum">
-        <number>20</number>
+      <widget class="QGroupBox" name="ToonShader">
+       <property name="title">
+        <string>Toon Shader</string>
        </property>
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
+       <layout class="QFormLayout" name="formLayout">
+        <item row="1" column="1">
+         <widget class="QSlider" name="levelSlider">
+          <property name="maximum">
+           <number>20</number>
+          </property>
+          <property name="sliderPosition">
+           <number>5</number>
+          </property>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="level">
+          <property name="text">
+           <string>level</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QSlider" name="kdSlider">
+          <property name="maximum">
+           <number>10</number>
+          </property>
+          <property name="value">
+           <number>10</number>
+          </property>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1">
+         <widget class="QSlider" name="ksSlider">
+          <property name="maximum">
+           <number>10</number>
+          </property>
+          <property name="value">
+           <number>2</number>
+          </property>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="1">
+         <widget class="QSlider" name="shineSlider">
+          <property name="maximum">
+           <number>10</number>
+          </property>
+          <property name="value">
+           <number>5</number>
+          </property>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>kd</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QLabel" name="label_2">
+          <property name="text">
+           <string>ks</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="0">
+         <widget class="QLabel" name="label_3">
+          <property name="text">
+           <string>shiny</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </widget>
      </item>
     </layout>
@@ -72,24 +151,75 @@
    <header>view.h</header>
    <slots>
     <slot>updateToonLayer(int)</slot>
+    <slot>updateToonKD(int)</slot>
+    <slot>updateToonKS(int)</slot>
+    <slot>updateToonShiny(int)</slot>
    </slots>
   </customwidget>
  </customwidgets>
  <resources/>
  <connections>
   <connection>
-   <sender>horizontalSlider</sender>
+   <sender>levelSlider</sender>
    <signal>valueChanged(int)</signal>
    <receiver>view</receiver>
    <slot>updateToonLayer(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>100</x>
-     <y>310</y>
+     <x>155</x>
+     <y>77</y>
     </hint>
     <hint type="destinationlabel">
      <x>599</x>
      <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>kdSlider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>view</receiver>
+   <slot>updateToonKD(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>101</x>
+     <y>108</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>294</x>
+     <y>154</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>ksSlider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>view</receiver>
+   <slot>updateToonKS(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>133</x>
+     <y>145</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>290</x>
+     <y>232</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>shineSlider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>view</receiver>
+   <slot>updateToonShiny(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>85</x>
+     <y>185</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>390</x>
+     <y>346</y>
     </hint>
    </hints>
   </connection>

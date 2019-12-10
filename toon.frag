@@ -18,14 +18,17 @@ uniform mat4 projection;
 // controlled via UI
 uniform float levels;
 uniform float ambientColor;
+uniform float material_kd;
+uniform float material_ks;
+uniform float material_shininess;
 
 // to be updated
 vec3 diffuseColor = vec3(0.30, 0.80, 0.10);
 
 //const vec3 ambientColor = vec3(0.01f);
-const float material_kd = 1.0f;
-const float material_ks = 0.2f;
-const float material_shininess = 0.9;
+//const float material_kd = 1.0f;
+//const float material_ks = 0.2f;
+//const float material_shininess = 0.9;
 //const float levels = 9.0;
 //const float scaleFactor = 1.0 / lol;
 

@@ -58,11 +58,17 @@ private:
 
     float m_chara_position;
     float m_toon_levels;
+    float m_toon_kd;
+    float m_toon_ks;
+    float m_toon_shiny;
 
 
 private slots:
     void tick();
     void updateToonLayer(int value);
+    void updateToonKD(int value);
+    void updateToonKS(int value);
+    void updateToonShiny(int value);
 
 private:
     int m_viewportWidth;

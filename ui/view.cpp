@@ -24,7 +24,10 @@ View::View(QWidget *parent) :
     m_time(),
     m_timer(),
     m_captureMouse(false),
-    m_toon_levels(1.0f)
+    m_toon_levels(5.0f),
+    m_toon_kd(1.0f),
+    m_toon_ks(0.2f),
+    m_toon_shiny(0.5f)
 {
     // View needs all mouse move events, not just mouse drag events
     setMouseTracking(true);
@@ -173,6 +176,10 @@ void View::paintGL() {
     m_toon_shader->setUniform("levels", m_toon_levels);
     m_toon_shader->setUniform("ambientColor", glm::vec3(0.01f));
 
+    m_toon_shader->setUniform("material_kd", m_toon_kd);
+    m_toon_shader->setUniform("material_ks", m_toon_ks);
+    m_toon_shader->setUniform("material_shininess", m_toon_shiny);
+
     glActiveTexture(GL_TEXTURE0);
     m_toon_diffuse->bind();
 
@@ -273,10 +280,18 @@ void View::tick() {
 }
 
 void View::updateToonLayer(int value) {
-
     m_toon_levels = static_cast<float>(value);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    m_toon_shader->bind();
-    m_toon_shader->setUniform("levels", m_toon_levels);
-    m_toon_shader->unbind();
 }
+
+void View::updateToonKD(int value) {
+    m_toon_kd = static_cast<float>(value) / 10.f;
+}
+
+void View::updateToonKS(int value) {
+    m_toon_ks = static_cast<float>(value) / 10.f;
+}
+
+void View::updateToonShiny(int value) {
+    m_toon_shiny = static_cast<float>(value) / 10.f;
+}
+
