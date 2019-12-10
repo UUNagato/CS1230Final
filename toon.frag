@@ -15,16 +15,19 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
+// controlled via UI
+uniform float levels;
+uniform float ambientColor;
+
 // to be updated
-//vec3 diffuseColor = vec3(0.30, 0.80, 0.10);
 vec3 diffuseColor = vec3(0.30, 0.80, 0.10);
 
-const vec3 ambientColor = vec3(0.01f);
+//const vec3 ambientColor = vec3(0.01f);
 const float material_kd = 1.0f;
 const float material_ks = 0.2f;
 const float material_shininess = 0.9;
-const float levels = 9.0;
-const float scaleFactor = 1.0 / levels;
+//const float levels = 9.0;
+//const float scaleFactor = 1.0 / lol;
 
 const vec3 rimColor = vec3(-1.0f);
 const vec3 eye_pos = vec3(0.5f, 3.f, 0.f);
@@ -39,6 +42,8 @@ void main(void)
 
 //    vec3 L = normalize(-vertexToLight);
 //    vec3 V = normalize(-vertexToCamera);
+
+    float scaleFactor = 1.0 / levels;
 
     vec3 L = normalize( light_pos - world_pos);
     vec3 V = normalize( eye_pos - world_pos);

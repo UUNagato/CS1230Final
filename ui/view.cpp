@@ -19,8 +19,12 @@
 #include "glm/gtc/matrix_transform.hpp"
 
 
-View::View(QWidget *parent) : QGLWidget(ViewFormat(), parent),
-    m_time(), m_timer(), m_captureMouse(false)
+View::View(QWidget *parent) :
+    QGLWidget(ViewFormat(), parent),
+    m_time(),
+    m_timer(),
+    m_captureMouse(false),
+    m_toon_levels(1.0f)
 {
     // View needs all mouse move events, not just mouse drag events
     setMouseTracking(true);
@@ -161,9 +165,14 @@ void View::paintGL() {
     // TODO: Implement the demo rendering here
     glViewport(0, 0, m_viewportWidth, m_viewportHeight);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // Toon shader
     m_toon_shader->bind();
 
     m_toon_shader->setUniform("model", chara_model);
+    m_toon_shader->setUniform("levels", m_toon_levels);
+    m_toon_shader->setUniform("ambientColor", glm::vec3(0.01f));
+
     glActiveTexture(GL_TEXTURE0);
     m_toon_diffuse->bind();
 
@@ -261,4 +270,13 @@ void View::tick() {
 
     // Flag this view for repainting (Qt will call paintGL() soon after)
     update();
+}
+
+void View::updateToonLayer(int value) {
+
+    m_toon_levels = static_cast<float>(value);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    m_toon_shader->bind();
+    m_toon_shader->setUniform("levels", m_toon_levels);
+    m_toon_shader->unbind();
 }

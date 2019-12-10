@@ -57,9 +57,12 @@ private:
     std::shared_ptr<Texture2D> m_surface_distortion;
 
     float m_chara_position;
+    float m_toon_levels;
+
 
 private slots:
     void tick();
+    void updateToonLayer(int value);
 
 private:
     int m_viewportWidth;
