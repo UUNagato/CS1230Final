@@ -27,7 +27,8 @@ View::View(QWidget *parent) :
     m_toon_levels(5.0f),
     m_toon_kd(1.0f),
     m_toon_ks(0.2f),
-    m_toon_shiny(0.5f)
+    m_toon_shiny(0.5f),
+    m_toon_diffuse_color(glm::vec3(0.3f, 0.8f, 0.1f))
 {
     // View needs all mouse move events, not just mouse drag events
     setMouseTracking(true);
@@ -180,6 +181,8 @@ void View::paintGL() {
     m_toon_shader->setUniform("material_ks", m_toon_ks);
     m_toon_shader->setUniform("material_shininess", m_toon_shiny);
 
+    m_toon_shader->setUniform("diffuseColor", m_toon_diffuse_color);
+
     glActiveTexture(GL_TEXTURE0);
     m_toon_diffuse->bind();
 
@@ -295,3 +298,17 @@ void View::updateToonShiny(int value) {
     m_toon_shiny = static_cast<float>(value) / 10.f;
 }
 
+void View::updateDiffuseR(int value) {
+    float m_diffuse_r = static_cast<float>(value) / 10.f;
+    m_toon_diffuse_color = glm::vec3(m_diffuse_r, m_toon_diffuse_color.y, m_toon_diffuse_color.z);
+}
+
+void View::updateDiffuseG(int value) {
+    float m_diffuse_g = static_cast<float>(value) / 10.f;
+    m_toon_diffuse_color = glm::vec3(m_toon_diffuse_color.x, m_diffuse_g, m_toon_diffuse_color.z);
+}
+
+void View::updateDiffuseB(int value) {
+    float m_diffuse_b = static_cast<float>(value) / 10.f;
+    m_toon_diffuse_color = glm::vec3(m_toon_diffuse_color.x, m_toon_diffuse_color.y, m_diffuse_b);
+}

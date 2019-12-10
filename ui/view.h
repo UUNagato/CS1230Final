@@ -61,6 +61,7 @@ private:
     float m_toon_kd;
     float m_toon_ks;
     float m_toon_shiny;
+    glm::vec3 m_toon_diffuse_color;
 
 
 private slots:
@@ -69,6 +70,10 @@ private slots:
     void updateToonKD(int value);
     void updateToonKS(int value);
     void updateToonShiny(int value);
+
+    void updateDiffuseR(int value);
+    void updateDiffuseG(int value);
+    void updateDiffuseB(int value);
 
 private:
     int m_viewportWidth;
