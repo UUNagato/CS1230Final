@@ -11,9 +11,14 @@ in vec3 cameraNormal;              // Normal in camera space
 out vec4 fragColor;
 
 uniform sampler2D mainTex;
+uniform sampler2D shadowMap;
+uniform bool useTex = true;
+uniform vec3 mainColor;
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
+
+in vec4 fragPosLightSpace;
 
 // controlled via UI
 uniform float levels;
@@ -26,6 +31,23 @@ uniform vec3 diffuseColor;
 const vec3 rimColor = vec3(-1.0f);
 const vec3 eye_pos = vec3(0.5f, 3.f, 0.f);
 const vec3 light_pos = vec3(4.f, 3.f, 2.f);  // Position of light source
+
+float shadowCalculation(vec4 lightSpacePos)
+{
+    vec3 projCoords = lightSpacePos.xyz / lightSpacePos.w;
+    projCoords = projCoords * 0.5 + 0.5;
+    vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
+    float shadow = 0.0;
+    for (int x = -1; x <= 1; ++x) {
+        for (int y = -1; y <= 1; ++y) {
+            float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r;
+            shadow += projCoords.z - 0.04 > pcfDepth ? 1.0 : 0.0;
+        }
+    }
+    float currentDepth = projCoords.z;
+    shadow = shadow / 9.0;
+    return shadow;
+}
 
 void main(void)
 {
@@ -46,7 +68,7 @@ void main(void)
 
     float diffuse = max(0, dot(L, world_normal));
 
-    vec3 color = texture(mainTex, uv).xyz;
+    vec3 color = useTex ? texture(mainTex, uv).xyz : mainColor;
 //    diffColor = texture(mainTex, uv).xyz; // use this or constant color
 
     diffColor = diffColor * material_kd * floor(diffuse * levels) * scaleFactor;
@@ -62,6 +84,9 @@ void main(void)
     float edgeDetection = (dot(V, world_normal) > 0.15) ? 1 : 0;
     edgeDetection = 1;
 
+    float shadow = shadowCalculation(fragPosLightSpace);
+    shadow = max(1 - shadow, 0.2);
+
     color = ambientColor + edgeDetection * (color + diffColor + specular * specMask);
 
 
@@ -71,7 +96,5 @@ void main(void)
 //    color = ambientColor + (color + diffuseColor + specular * specMask) - edgeDetection * rimColor;
     ///////// end EXP
 
-
-    fragColor= vec4(color, 1);
-
+    fragColor = vec4(shadow * color, 1.0);
 }

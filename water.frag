@@ -150,5 +150,6 @@ void main(void)
     vec3 color = (surfaceNoiseColor.xyz * surfaceNoiseColor.w) + (waterColor.xyz * (1-surfaceNoiseColor.w));
     float alpha = surfaceNoiseColor.w + waterColor.w*(1-surfaceNoiseColor.w);
 
-    fragColor = vec4(color, alpha);
+    float shadow = max(1 - shadowCalculation(fragPosLightSpace), 0.3);
+    fragColor = vec4(shadow * color, alpha);
 }

@@ -45,6 +45,8 @@ private:
     std::unique_ptr<OpenGLShape> m_sphere;
     std::unique_ptr<Quad> m_quad;
     std::unique_ptr<ObjModel> m_character;
+    std::unique_ptr<ObjModel> m_swimming_ring;
+    std::unique_ptr<ObjModel> m_swimming_ring_pattern;
 
     std::unique_ptr<Shader> m_outline_shader;
     std::unique_ptr<Shader> m_toon_shader;

@@ -17,5 +17,7 @@
         <file>models/Giraffe_txtr.png</file>
         <file>models/PerlinNoise.png</file>
         <file>models/WaterDistortion.png</file>
+        <file>models/swimming_pattern.obj</file>
+        <file>models/swimming_ring.obj</file>
     </qresource>
 </RCC>

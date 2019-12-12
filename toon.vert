@@ -7,6 +7,7 @@ layout (location=2) in vec2 iuv;
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
+uniform mat4 lightSpaceMatrix;
 
 out vec3 world_pos;
 out vec3 world_normal;
@@ -16,6 +17,8 @@ out vec3 vertex;                    // Vertex pos in camera space
 out vec3 vertexToLight;             // Vector from vertex to light
 out vec3 vertexToCamera;            // Vector from vertex to camera
 out vec3 cameraNormal;              // Normal in camera space
+out vec4 fragPosLightSpace;
+
 
 // z is up and down(-down), y is left and right (-right), x is near far(-far)
 const vec4 lightPosition = vec4(0, -50, 20, 0);  // Position of light source
@@ -23,6 +26,7 @@ const vec4 lightPosition = vec4(0, -50, 20, 0);  // Position of light source
 void main(void)
 {
     vec4 worldP = model * vec4(pos, 1.0);
+    fragPosLightSpace = lightSpaceMatrix * worldP;
     world_pos = vec3(worldP);
     world_normal = vec3(model * vec4(normal, 0));
     gl_Position = projection * view * worldP;

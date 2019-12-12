@@ -74,11 +74,11 @@ void View::initializeGL() {
     glFrontFace(GL_CCW);
 
 
-    glm::mat4 view = glm::lookAt(glm::vec3(0.5f, 3.f, 0.f), glm::vec3(0.f, 0.f, -1.f),
+    glm::mat4 view = glm::lookAt(glm::vec3(0.8f, 3.5f, -0.2f), glm::vec3(0.f, 0.f, -1.25f),
                                  glm::vec3(0.f, 1.f, 0.f));
     glm::mat4 projection = glm::perspective(glm::radians(45.f), 1024.f / 768.f, 0.1f, 10.f);
 
-    glm::mat4 lightView = glm::lookAt(glm::vec3(1.5f, 2.f, -1.5f), glm::vec3(0.f, 0.f, -1.f),
+    glm::mat4 lightView = glm::lookAt(glm::vec3(1.5f, 2.f, -1.5f), glm::vec3(0.f, 0.f, -1.5f),
                                       glm::vec3(0.f, 1.f, 0.f));
     glm::mat4 lightProj = glm::ortho(-3.f, 3.f, -3.f, 3.f, 0.1f, 5.f);
     glm::mat4 lightSpaceMat = lightProj * lightView;
@@ -91,6 +91,8 @@ void View::initializeGL() {
 
     // set texture
     m_toon_shader->setUniform("mainTex", 0);
+    m_toon_shader->setUniform("shadowMap", 2);
+    m_toon_shader->setUniform("lightSpaceMatrix", lightSpaceMat);
 
     m_toon_shader->unbind();
 
@@ -129,14 +131,19 @@ void View::initializeGL() {
 
     m_quad = std::make_unique<Quad>();
     m_character = std::make_unique<ObjModel>();
+    m_swimming_ring = std::make_unique<ObjModel>();
+    m_swimming_ring_pattern = std::make_unique<ObjModel>();
     m_toon_diffuse = std::make_shared<Texture2D>();
     m_shadow_map = std::make_shared<ShadowMapping>();
 
     m_surface_noise = std::make_shared<Texture2D>();
     m_surface_distortion = std::make_shared<Texture2D>();
 
-    std::cout << m_character->load(":/models/giraffe.obj") << std::endl;
-    std::cout << "Read character texture map:" << m_toon_diffuse->open(":/models/Giraffe_txtr.png") << std::endl;
+    std::cout << "Load character Model:" << m_character->load(":/models/giraffe.obj") << "\n";
+    std::cout << "Read character texture map:" << m_toon_diffuse->open(":/models/Giraffe_txtr.png") << '\n';
+    std::cout << "Load simming ring model:" << m_swimming_ring->load(":/models/swimming_ring.obj") << "\n";
+    std::cout << "Load simming ring pattern:" << m_swimming_ring_pattern->load(":/models/swimming_pattern.obj") << "\n";
+
 
     m_surface_noise->open(":/models/PerlinNoise.png");
     m_surface_distortion->open(":/models/WaterDistortion.png");
@@ -146,23 +153,28 @@ void View::paintGL() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // draw character, make it lay down
-    glm::mat4 chara_model(1.f);
+    glm::mat4 chara_model(1.f), ring_model(1.f);
     chara_model = glm::scale(chara_model, glm::vec3(0.5f));
     chara_model = glm::rotate(chara_model, glm::radians(-90.f), glm::vec3(1.f, 0.f, 0.f));
     chara_model = glm::translate(chara_model, glm::vec3(0.f, 0.f, m_chara_position));
+    ring_model = glm::translate(ring_model, glm::vec3(0.f, m_chara_position - 0.7f, -0.85f));
+    ring_model = glm::scale(ring_model, glm::vec3(0.06f));
 
     glm::mat4 water_model(1.f), water_scale_model(1.f);
     water_model = glm::translate(water_model, glm::vec3(0.f, 0.1f, -1.f));
     water_model = glm::scale(water_model, glm::vec3(5.f));
     water_scale_model = glm::scale(water_scale_model, glm::vec3(4.f, 1.5f, 1.f));
 
-    // first pass shadowmapping
+    // first pass shadowmapping ==============================================================
     glViewport(0, 0, ShadowMapping::SHADOW_MAPPING_WIDTH, ShadowMapping::SHADOW_MAPPING_HEIGHT);
     m_shadowmap_shader->bind();
     m_shadow_map->setup();
     glClear(GL_DEPTH_BUFFER_BIT);
     m_shadowmap_shader->setUniform("model", chara_model);
     m_character->draw();
+    m_shadowmap_shader->setUniform("model", ring_model);
+    m_swimming_ring->draw();
+    m_swimming_ring_pattern->draw();
     m_shadow_map->finish();
     m_shadowmap_shader->unbind();
 
@@ -170,7 +182,7 @@ void View::paintGL() {
     glViewport(0, 0, m_viewportWidth, m_viewportHeight);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // Toon shader
+    // Toon shader ==============================================================
     m_toon_shader->bind();
 
     m_toon_shader->setUniform("model", chara_model);
@@ -180,20 +192,35 @@ void View::paintGL() {
     m_toon_shader->setUniform("material_kd", m_toon_kd);
     m_toon_shader->setUniform("material_ks", m_toon_ks);
     m_toon_shader->setUniform("material_shininess", m_toon_shiny);
-
+    m_toon_shader->setUniform("useTex", true);
     m_toon_shader->setUniform("diffuseColor", m_toon_diffuse_color);
 
     glActiveTexture(GL_TEXTURE0);
     m_toon_diffuse->bind();
 
+    glActiveTexture(GL_TEXTURE2);
+    m_shadow_map->bindShadowMapping();
+
     m_character->draw();
-    m_toon_diffuse->unbind();
+    // m_toon_diffuse->unbind();
+
+    // draw swimming ring
+    m_toon_shader->setUniform("model", ring_model);
+    m_toon_shader->setUniform("useTex", false);
+    m_toon_shader->setUniform("mainColor", glm::vec3(0.75f, 0.75f, 0.75f));
+    m_swimming_ring->draw();
+
+    m_toon_shader->setUniform("mainColor", glm::vec3(0.8f, 0.2f, 0.2f));
+    m_swimming_ring_pattern->draw();
+
     m_toon_shader->unbind();
 
     m_outline_shader->bind();
     m_outline_shader->setUniform("model", chara_model);
     glCullFace(GL_FRONT);
     m_character->draw();
+    m_outline_shader->setUniform("model", ring_model);
+    m_swimming_ring->draw();
     glCullFace(GL_BACK);
     m_outline_shader->unbind();
 
@@ -276,7 +303,7 @@ void View::tick() {
     float time = m_time.elapsed()/500.f;
 
     // TODO: Implement the demo update here
-    m_chara_position = -0.1f + sin(time)/10.f;
+    m_chara_position = 0.75f + sin(time) * 0.05f;
 
     // Flag this view for repainting (Qt will call paintGL() soon after)
     update();
