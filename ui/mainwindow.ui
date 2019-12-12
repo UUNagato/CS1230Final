@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1000</width>
+    <width>1001</width>
     <height>600</height>
    </rect>
   </property>
@@ -65,6 +65,9 @@
         </item>
         <item row="1" column="1">
          <widget class="QSlider" name="levelSlider">
+          <property name="minimum">
+           <number>1</number>
+          </property>
           <property name="maximum">
            <number>20</number>
           </property>
