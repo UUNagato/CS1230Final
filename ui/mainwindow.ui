@@ -65,6 +65,9 @@
         </item>
         <item row="1" column="1">
          <widget class="QSlider" name="levelSlider">
+          <property name="minimum">
+           <number>1</number>
+          </property>
           <property name="maximum">
            <number>20</number>
           </property>
