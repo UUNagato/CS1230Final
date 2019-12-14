@@ -28,7 +28,7 @@ View::View(QWidget *parent) :
     m_toon_kd(1.0f),
     m_toon_ks(0.2f),
     m_toon_shiny(0.5f),
-    m_toon_diffuse_color(glm::vec3(0.3f, 0.8f, 0.1f))
+    m_toon_diffuse_color(glm::vec3(0.8f, 0.8f, 0.2f))
 {
     // View needs all mouse move events, not just mouse drag events
     setMouseTracking(true);
@@ -73,26 +73,23 @@ void View::initializeGL() {
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
 
-
-    glm::mat4 view = glm::lookAt(glm::vec3(0.8f, 3.5f, -0.2f), glm::vec3(0.f, 0.f, -1.25f),
+    glm::vec3 eye_pos = glm::vec3(0.8f, 3.5f, -0.2f);
+    glm::mat4 view = glm::lookAt(eye_pos, glm::vec3(0.f, 0.f, -1.25f),
                                  glm::vec3(0.f, 1.f, 0.f));
     glm::mat4 projection = glm::perspective(glm::radians(45.f), 1024.f / 768.f, 0.1f, 10.f);
 
-    glm::mat4 lightView = glm::lookAt(glm::vec3(1.5f, 2.f, -1.5f), glm::vec3(0.f, 0.f, -1.5f),
-                                      glm::vec3(0.f, 1.f, 0.f));
-    glm::mat4 lightProj = glm::ortho(-3.f, 3.f, -3.f, 3.f, 0.1f, 5.f);
-    glm::mat4 lightSpaceMat = lightProj * lightView;
+    m_light_dir = glm::vec3(-1.5f, -2.f, 1.f);
 
 
     m_toon_shader = std::make_unique<Shader>(":/shaders/toon.vert", ":/shaders/toon.frag");
     m_toon_shader->bind();
     m_toon_shader->setUniform("view", view);
     m_toon_shader->setUniform("projection", projection);
+    m_toon_shader->setUniform("eye_pos", eye_pos);
 
     // set texture
     m_toon_shader->setUniform("mainTex", 0);
     m_toon_shader->setUniform("shadowMap", 2);
-    m_toon_shader->setUniform("lightSpaceMatrix", lightSpaceMat);
 
     m_toon_shader->unbind();
 
@@ -101,7 +98,6 @@ void View::initializeGL() {
     m_water_shader->setUniform("view", view);
     m_water_shader->setUniform("projection", projection);
 
-    m_water_shader->setUniform("lightSpaceMatrix", lightSpaceMat);
     m_water_shader->setUniform("shadowMap", 2);
     m_water_shader->setUniform("surfaceNoise", 0);
     m_water_shader->setUniform("surfaceDistortion", 1);
@@ -115,9 +111,7 @@ void View::initializeGL() {
     m_outline_shader->unbind();
 
     m_shadowmap_shader = std::make_unique<Shader>(":/shaders/shadowmap.vert", ":/shaders/shadowmap.frag");
-    m_shadowmap_shader->bind();
-    m_shadowmap_shader->setUniform("lightSpaceMatrix", lightSpaceMat);
-    m_shadowmap_shader->unbind();
+
 
 
     //std::vector<GLfloat> sphereData = SPHERE_VERTEX_POSITIONS;
@@ -135,6 +129,8 @@ void View::initializeGL() {
     m_swimming_ring_pattern = std::make_unique<ObjModel>();
     m_toon_diffuse = std::make_shared<Texture2D>();
     m_shadow_map = std::make_shared<ShadowMapping>();
+    m_camera_depth = std::make_shared<ShadowMapping>();
+    m_camera_depth->setSize(m_viewportWidth, m_viewportHeight);
 
     m_surface_noise = std::make_shared<Texture2D>();
     m_surface_distortion = std::make_shared<Texture2D>();
@@ -154,11 +150,11 @@ void View::paintGL() {
 
     // draw character, make it lay down
     glm::mat4 chara_model(1.f), ring_model(1.f);
-    chara_model = glm::scale(chara_model, glm::vec3(0.5f));
-    chara_model = glm::rotate(chara_model, glm::radians(-90.f), glm::vec3(1.f, 0.f, 0.f));
-    chara_model = glm::translate(chara_model, glm::vec3(0.f, 0.f, m_chara_position));
-    ring_model = glm::translate(ring_model, glm::vec3(0.f, m_chara_position - 0.7f, -0.85f));
+    chara_model = glm::rotate(glm::mat4(1.f), glm::radians(-90.f), glm::vec3(1.f, 0.f, 0.f));
+    chara_model = glm::scale(glm::mat4(1.f), glm::vec3(0.5f)) * chara_model;
+    chara_model = glm::translate(glm::mat4(1.f), glm::vec3(0.f, m_chara_position, -0.1f)) * chara_model;
     ring_model = glm::scale(ring_model, glm::vec3(0.06f));
+    ring_model = glm::translate(glm::mat4(1.f), glm::vec3(0.f, m_chara_position - 0.2f, -1.0f)) * ring_model;
 
     glm::mat4 water_model(1.f), water_scale_model(1.f);
     water_model = glm::translate(water_model, glm::vec3(0.f, 0.1f, -1.f));
@@ -167,7 +163,16 @@ void View::paintGL() {
 
     // first pass shadowmapping ==============================================================
     glViewport(0, 0, ShadowMapping::SHADOW_MAPPING_WIDTH, ShadowMapping::SHADOW_MAPPING_HEIGHT);
+    // compute light transform
+    glm::vec3 look_target(0.f, 0.f, -1.25f);
+    glm::mat4 lightView = glm::lookAt(look_target - m_light_dir * 0.8f, look_target,
+                                      glm::vec3(0.f, 1.f, 0.f));
+    glm::mat4 lightProj = glm::ortho(-3.f, 3.f, -3.f, 3.f, 0.1f, 5.f);
+    glm::mat4 lightSpaceMat = lightProj * lightView;
+
     m_shadowmap_shader->bind();
+    m_shadowmap_shader->setUniform("lightSpaceMatrix", lightSpaceMat);
+
     m_shadow_map->setup();
     glClear(GL_DEPTH_BUFFER_BIT);
     m_shadowmap_shader->setUniform("model", chara_model);
@@ -185,9 +190,11 @@ void View::paintGL() {
     // Toon shader ==============================================================
     m_toon_shader->bind();
 
+    m_toon_shader->setUniform("lightSpaceMatrix", lightSpaceMat);
+    m_toon_shader->setUniform("lightDirection", m_light_dir);
     m_toon_shader->setUniform("model", chara_model);
     m_toon_shader->setUniform("levels", m_toon_levels);
-    m_toon_shader->setUniform("ambientColor", glm::vec3(0.01f));
+    m_toon_shader->setUniform("ambientColor", glm::vec3(0.4f));
 
     m_toon_shader->setUniform("material_kd", m_toon_kd);
     m_toon_shader->setUniform("material_ks", m_toon_ks);
@@ -207,7 +214,7 @@ void View::paintGL() {
     // draw swimming ring
     m_toon_shader->setUniform("model", ring_model);
     m_toon_shader->setUniform("useTex", false);
-    m_toon_shader->setUniform("mainColor", glm::vec3(0.75f, 0.75f, 0.75f));
+    m_toon_shader->setUniform("mainColor", glm::vec3(0.95f, 0.95f, 0.98f));
     m_swimming_ring->draw();
 
     m_toon_shader->setUniform("mainColor", glm::vec3(0.8f, 0.2f, 0.2f));
@@ -230,6 +237,7 @@ void View::paintGL() {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     m_water_shader->setUniform("model", water_model);
     m_water_shader->setUniform("scaleMatrix", water_scale_model);
+    m_water_shader->setUniform("lightSpaceMatrix", lightSpaceMat);
 
     glActiveTexture(GL_TEXTURE0);
     m_surface_noise->bind();
@@ -240,6 +248,7 @@ void View::paintGL() {
 
     glActiveTexture(GL_TEXTURE2);
     m_shadow_map->bindShadowMapping();
+
     m_water_shader->setUniform("time", static_cast<float>(m_time.elapsed()));
     m_quad->draw();
     m_shadow_map->unbindShadowMapping();
@@ -258,6 +267,10 @@ void View::resizeGL(int w, int h) {
 
     m_viewportWidth = w;
     m_viewportHeight = h;
+
+    if (m_camera_depth) {
+        m_camera_depth->setSize(w, h);
+    }
 }
 
 void View::mousePressEvent(QMouseEvent *event) {
@@ -303,7 +316,7 @@ void View::tick() {
     float time = m_time.elapsed()/500.f;
 
     // TODO: Implement the demo update here
-    m_chara_position = 0.75f + sin(time) * 0.05f;
+    m_chara_position = 0.2f + sin(time) * 0.05f;
 
     // Flag this view for repainting (Qt will call paintGL() soon after)
     update();

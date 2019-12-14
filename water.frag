@@ -2,7 +2,11 @@
 in vec3 world_pos;
 in vec3 world_normal;
 in vec2 uv;
-in vec4 fragPosLightSpace;
+in vec4 screen_pos;
+in vec3 local_pos;
+
+uniform mat4 model;
+uniform mat4 lightSpaceMatrix;
 
 uniform sampler2D shadowMap;
 uniform sampler2D cameraDepthTexture;
@@ -106,7 +110,11 @@ void main(void)
     float zNear = 0.1f;
     float zFar = 10.f;
 
-    float existingDepth01 = textureProj(cameraDepthTexture, world_pos).x;
+    vec2 screen_pos_uv = (screen_pos.xy / screen_pos.w) * 0.5 + vec2(0.5);
+    float existingDepth01 = texture(cameraDepthTexture, screen_pos_uv).x;
+    float currentDepth = screen_pos.z / screen_pos.w;
+    float objectFoam = abs(currentDepth - existingDepth01) > foamDistance ? 0.0 : 1.0;
+
     float existingDepth02 = 2.f * existingDepth01 - 1.f;
     // convert depth to linear
     float existingDepthLinear = 2.f * zNear * zFar / (zFar + zNear - existingDepth02 * (zFar - zNear));
@@ -134,6 +142,12 @@ void main(void)
 
     vec2 noiseUV = vec2(uv.x + time/1000.f * surfaceNoiseScroll.x + distortSample.x, uv.y + time/1000.f*surfaceNoiseScroll.y + distortSample.y);
 
+    vec2 shadowOffset = vec2(0.005, -0.01) * vec2(abs(sin(time / 1000.f))) + vec2(0.05 * distortSample.x, 0.2 * distortSample.y);
+    vec3 shadowPos = vec3(local_pos.x + shadowOffset.x, local_pos.y, local_pos.z + shadowOffset.y);
+    vec4 lightSpacePoint = lightSpaceMatrix * model * vec4(shadowPos, 1.0);
+
+    float shadow = shadowCalculation(lightSpacePoint);
+
 //    float surfaceNoiseSample = DotNoise2D(noiseUV, 0.1f, 0.5f, 100.f);
 //    surfaceNoiseSample = smoothstep(0.7, 0.9, surfaceNoiseSample);
 //    float surfaceNoise = surfaceNoiseSample > surfaceNoiseCutoff ? 1 : 0;
@@ -146,10 +160,10 @@ void main(void)
 
 ////    float surfaceNoise = surfaceNoiseSample > surfaceNoiseCutoff ? 1.f : 0.f;
     vec4 surfaceNoiseColor = foamColor;
-    surfaceNoiseColor.w *= surfaceNoise;
+    surfaceNoiseColor.w *= surfaceNoise * (1 - shadow);
     vec3 color = (surfaceNoiseColor.xyz * surfaceNoiseColor.w) + (waterColor.xyz * (1-surfaceNoiseColor.w));
     float alpha = surfaceNoiseColor.w + waterColor.w*(1-surfaceNoiseColor.w);
 
-    float shadow = max(1 - shadowCalculation(fragPosLightSpace), 0.3);
+    shadow = max(1 - shadow, 0.3);
     fragColor = vec4(shadow * color, alpha);
 }

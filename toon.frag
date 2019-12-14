@@ -22,14 +22,16 @@ in vec4 fragPosLightSpace;
 
 // controlled via UI
 uniform float levels;
-uniform float ambientColor;
+uniform vec3 ambientColor;
 uniform float material_kd;
 uniform float material_ks;
 uniform float material_shininess;
 uniform vec3 diffuseColor;
 
+uniform vec3 eye_pos = vec3(0.5f, 3.f, 0.f);
+uniform vec3 lightDirection;
+
 const vec3 rimColor = vec3(-1.0f);
-const vec3 eye_pos = vec3(0.5f, 3.f, 0.f);
 const vec3 light_pos = vec3(4.f, 3.f, 2.f);  // Position of light source
 
 float shadowCalculation(vec4 lightSpacePos)
@@ -59,25 +61,35 @@ void main(void)
 //    vec3 L = normalize(-vertexToLight);
 //    vec3 V = normalize(-vertexToCamera);
 
-    vec3 diffColor = diffuseColor;
+    vec3 diffColor = useTex ? texture(mainTex, uv).xyz : mainColor;
+    vec3 ambient = ambientColor * diffColor;
+    vec3 n = normalize(world_normal);
 
-    float scaleFactor = 1.0 / levels;
+    float scaleFactor = 0.0;
+    if (levels > 0)
+        scaleFactor = 1.0 / levels;
 
-    vec3 L = normalize( light_pos - world_pos);
+    vec3 L = normalize(-lightDirection);
     vec3 V = normalize( eye_pos - world_pos);
 
-    float diffuse = max(0, dot(L, world_normal));
+    float diffuse = max(0, dot(L, n));
 
-    vec3 color = useTex ? texture(mainTex, uv).xyz : mainColor;
 //    diffColor = texture(mainTex, uv).xyz; // use this or constant color
+    float current_level = floor(diffuse * levels);
+    float diffuse_in_level = diffuse * levels - current_level;
+    float diffuse_smooth_step =
+            smoothstep(-0.15, 0.15, diffuse_in_level) +
+            smoothstep(0.85, 1.15, diffuse_in_level);
+    float diffuse_intensity = clamp(current_level + (diffuse_smooth_step - 1.0), 0.0, levels);
+    //diffColor = diffColor * diffuseColor * material_kd * floor(diffuse * levels) * scaleFactor;
+    diffColor = diffColor * diffuseColor * material_kd * diffuse_intensity * scaleFactor;
 
-    diffColor = diffColor * material_kd * floor(diffuse * levels) * scaleFactor;
 
     vec3 H = normalize(L + V);
     float specular = 0.0;
 
     if ( dot(L, world_normal) > 0.0) {
-        specular = material_ks * pow( max(0, dot(H, world_normal)), material_shininess);
+        specular = material_ks * pow( max(0, dot(H, n)), material_shininess);
     }
 
     float specMask = (pow(dot(H, world_normal), material_shininess) > 0.4) ? 1: 0;
@@ -87,7 +99,7 @@ void main(void)
     float shadow = shadowCalculation(fragPosLightSpace);
     shadow = max(1 - shadow, 0.2);
 
-    color = ambientColor + edgeDetection * (color + diffColor + specular * specMask);
+    vec3 color = ambient + edgeDetection * (diffColor + specular * specMask);
 
 
     ///////// EXP
@@ -95,6 +107,7 @@ void main(void)
 //    float edgeDetection = 1.0f;
 //    color = ambientColor + (color + diffuseColor + specular * specMask) - edgeDetection * rimColor;
     ///////// end EXP
+    vec3 final_color = shadow * color;
 
-    fragColor = vec4(shadow * color, 1.0);
+    fragColor = vec4(final_color, 1.0);
 }

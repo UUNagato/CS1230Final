@@ -55,6 +55,7 @@ private:
 
     std::shared_ptr<Texture2D> m_toon_diffuse;
     std::shared_ptr<ShadowMapping> m_shadow_map;
+    std::shared_ptr<ShadowMapping> m_camera_depth;
     std::shared_ptr<Texture2D> m_surface_noise;
     std::shared_ptr<Texture2D> m_surface_distortion;
 
@@ -64,6 +65,7 @@ private:
     float m_toon_ks;
     float m_toon_shiny;
     glm::vec3 m_toon_diffuse_color;
+    glm::vec3 m_light_dir;
 
 
 private slots:

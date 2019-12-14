@@ -28,7 +28,7 @@ void main(void)
     vec4 worldP = model * vec4(pos, 1.0);
     fragPosLightSpace = lightSpaceMatrix * worldP;
     world_pos = vec3(worldP);
-    world_normal = vec3(model * vec4(normal, 0));
+    world_normal = normalize(vec3(model * vec4(normal, 0)));
     gl_Position = projection * view * worldP;
     uv = iuv;
 

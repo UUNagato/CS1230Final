@@ -20,12 +20,17 @@ public:
     void bindShadowMapping();
     void unbindShadowMapping();
 
+    void setSize(int width, int height);
+
     static const int SHADOW_MAPPING_WIDTH = 1024;
     static const int SHADOW_MAPPING_HEIGHT = 1024;
 
 private:
     unsigned int m_fbo;
     unsigned int m_texture;
+
+    int m_width;
+    int m_height;
 
     glm::vec3 light_pos;
     glm::vec3 light_dir;

@@ -2,7 +2,8 @@
 //#include <glew-1.10.0\include\GL\glew.h>
 #include "GL/glew.h"
 
-ShadowMapping::ShadowMapping() : m_fbo(0), m_texture(0)
+ShadowMapping::ShadowMapping() : m_fbo(0), m_texture(0), m_width(SHADOW_MAPPING_WIDTH),
+    m_height(SHADOW_MAPPING_HEIGHT)
 {
 
 }
@@ -31,7 +32,7 @@ void ShadowMapping::setup()
         if (!m_texture)
             return;
         glBindTexture(GL_TEXTURE_2D, m_texture);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_MAPPING_WIDTH, SHADOW_MAPPING_HEIGHT,
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, m_width, m_height,
                      0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -59,5 +60,27 @@ void ShadowMapping::bindShadowMapping()
 
 void ShadowMapping::unbindShadowMapping()
 {
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void ShadowMapping::setSize(int width, int height)
+{
+    m_width = width > 0 ? width : 1;
+    m_height = height > 0 ? height : 1;
+
+    if (m_texture)
+        glDeleteTextures(1, &m_texture);
+
+    glGenTextures(1, &m_texture);
+    if (!m_texture)
+        return;
+
+    glBindTexture(GL_TEXTURE_2D, m_texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, m_width, m_height,
+                 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glBindTexture(GL_TEXTURE_2D, 0);
 }
