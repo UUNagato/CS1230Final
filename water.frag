@@ -103,42 +103,13 @@ void main(void)
     vec2 surfaceNoiseScroll = vec2(0.05f, 0.05f);
     float surfaceNoiseCutoff = 0.777f;
     float surfaceDistortionAmount = 0.2f;
-    float foamMaxDist = 0.4f;
-    float foamMinDist = 0.04f;
-    float foamDistance = 0.4f;
     float SMOOTHSTEP_AA = 0.01f;
-    float zNear = 0.1f;
-    float zFar = 10.f;
 
-    vec2 screen_pos_uv = (screen_pos.xy / screen_pos.w) * 0.5 + vec2(0.5);
-    float existingDepth01 = texture(cameraDepthTexture, screen_pos_uv).x;
-    float currentDepth = screen_pos.z / screen_pos.w;
-    float objectFoam = abs(currentDepth - existingDepth01) > foamDistance ? 0.0 : 1.0;
-
-    float existingDepth02 = 2.f * existingDepth01 - 1.f;
-    // convert depth to linear
-    float existingDepthLinear = 2.f * zNear * zFar / (zFar + zNear - existingDepth02 * (zFar - zNear));
-
-    // don't use world pos? use position relative to the quad??
-    float depthDifference = abs(existingDepthLinear - length(vec2(world_pos.x, world_pos.z))/2.5f);
+    float depthDifference = length(vec2(world_pos.x, world_pos.z))/2.5f;
     float waterDepthDifference01 = clamp(depthDifference / depthMaxDist, 0, 1);
     vec4 waterColor = mix(depthGradientDeep, depthGradientShallow, waterDepthDifference01);
 
-//    vec3 existingNormal = textureProj(cameraNormalsTexture, world_pos).xyz;
-
-//    float normalDot = clamp(dot(existingNormal, normalize(world_pos-vec3(0.5f, 3.f, 0.f))), 0, 1);
-//    float foamDistance = mix(foamMaxDist, foamMinDist, normalDot);
-//    float foamDepthDifference01 = clamp(depthDifference / foamDistance, 0, 1);
-//    surfaceNoiseCutoff = foamDepthDifference01 * surfaceNoiseCutoff;
-//    vec4 surfaceDistortion_ST = vec4(1.f,1.f,1.f,1.f);
-//    vec2 distortUV = vec2(uv.xy * surfaceDistortion_ST.xy + surfaceDistortion_ST.zw);
-//    vec2 distortSample = (texture(surfaceDistortion, distortUV).xy * 2.f -vec2(1.f, 1.f)) * surfaceDistortionAmount;
-
-//    vec4 surfaceNoise_ST = vec4(2.f,4.f,0.25f,0.15f);
-//    vec2 noiseUV = uv.xy * surfaceNoise_ST.xy + surfaceNoise_ST.zw;
-
     vec2 distortSample = (texture(surfaceDistortion, uv).xy * 2 - 1) * surfaceDistortionAmount;
-
 
     vec2 noiseUV = vec2(uv.x + time/1000.f * surfaceNoiseScroll.x + distortSample.x, uv.y + time/1000.f*surfaceNoiseScroll.y + distortSample.y);
 
@@ -148,17 +119,10 @@ void main(void)
 
     float shadow = shadowCalculation(lightSpacePoint);
 
-//    float surfaceNoiseSample = DotNoise2D(noiseUV, 0.1f, 0.5f, 100.f);
-//    surfaceNoiseSample = smoothstep(0.7, 0.9, surfaceNoiseSample);
-//    float surfaceNoise = surfaceNoiseSample > surfaceNoiseCutoff ? 1 : 0;
     float surfaceNoiseSample = texture(surfaceNoise, noiseUV).x;
+    // anti-aliasing
     float surfaceNoise = smoothstep(surfaceNoiseCutoff - SMOOTHSTEP_AA, surfaceNoiseCutoff + SMOOTHSTEP_AA, surfaceNoiseSample);
 
-//    fragColor = waterColor + surfaceNoise;// + vec4(surfaceNoiseSample);
-
-//    // anti-aliasing
-
-////    float surfaceNoise = surfaceNoiseSample > surfaceNoiseCutoff ? 1.f : 0.f;
     vec4 surfaceNoiseColor = foamColor;
     surfaceNoiseColor.w *= surfaceNoise * (1 - shadow);
     vec3 color = (surfaceNoiseColor.xyz * surfaceNoiseColor.w) + (waterColor.xyz * (1-surfaceNoiseColor.w));
